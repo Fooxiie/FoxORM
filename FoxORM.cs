@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq.Expressions;
+using System.Text;
 using System.Threading.Tasks;
 using SQLite;
 
 namespace FoxORM
 {
+    /// <summary>
+    /// Represents a FoxOrm class for working with SQLite database as ORM.
+    /// </summary>
     public class FoxOrm : IDisposable
     {
         private SQLiteAsyncConnection sqliteConnection { get; }
@@ -147,6 +152,88 @@ namespace FoxORM
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Joins two tables asynchronously based on the given predicate and returns a list of objects of type T1.
+        /// </summary>
+        /// <typeparam name="T1">The type of objects in the first table.</typeparam>
+        /// <typeparam name="T2">The type of objects in the second table.</typeparam>
+        /// <param name="predicate">The predicate used to filter the join operation.</param>
+        /// <returns>A Task representing the asynchronous operation. The task result contains a list of objects of type T1.</returns>
+        public async Task<List<T1>> JoinAsync<T1, T2>(Expression<Func<T1, bool>> predicate)
+            where T1 : new()
+            where T2 : new()
+        {
+            
+            var idProperty = typeof(T1).GetProperty("id");
+            if (idProperty == null) throw new Exception($"The type {typeof(T1).Name} does not have a 'id' property, which is expected for entities.");
+            var idPropertyName = typeof(T1).GetProperty("Id").Name;
+
+
+            var query = new StringBuilder($"SELECT t1.* FROM {typeof(T1).Name} t1 JOIN {typeof(T2).Name} t2 ON t1.{idPropertyName} = t2.{idPropertyName}");
+        
+            query.Append(" WHERE ");
+            ProcessBinary((BinaryExpression)predicate.Body, query);
+        
+            return await sqliteConnection.QueryAsync<T1>(query.ToString());
+        }
+
+        /// <summary>
+        /// Processes a binary expression by recursively traversing the expression tree
+        /// and builds a query string based on the expression.
+        /// </summary>
+        /// <param name="body">The binary expression to process.</param>
+        /// <param name="query">The StringBuilder representing the query string being built.</param>
+        private void ProcessBinary(BinaryExpression body, StringBuilder query)
+        {
+            if (body == null)
+                return;
+        
+            if (body.Left is BinaryExpression)
+            {
+                ProcessBinary((BinaryExpression)body.Left, query);
+            }
+            else
+            {
+                AddCondition(body.Left, query);
+            }
+        
+            switch (body.NodeType)
+            {
+                case ExpressionType.AndAlso:
+                    query.Append(" AND ");
+                    break;
+                case ExpressionType.OrElse:
+                    query.Append(" OR ");
+                    break;
+            }
+        
+            if (body.Right is BinaryExpression)
+            {
+                ProcessBinary((BinaryExpression)body.Right, query);
+            }
+            else
+            {
+                AddCondition(body.Right, query);
+            }
+        }
+
+        /// <summary>
+        /// Adds a condition to the query based on the given expression.
+        /// </summary>
+        /// <param name="expression">The expression representing the condition.</param>
+        /// <param name="query">The StringBuilder object representing the query.</param>
+        private void AddCondition(Expression expression, StringBuilder query)
+        {
+            var memberExpression = expression as MemberExpression;
+            var constantExpression = expression as ConstantExpression;
+        
+            if (memberExpression != null)
+                query.Append($"{memberExpression.Member.Name} ");
+        
+            if (constantExpression != null)
+                query.Append($"= {constantExpression.Value} ");
         }
 
         /// <summary>
