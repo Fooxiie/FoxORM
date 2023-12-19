@@ -1,28 +1,25 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Tests unitaires
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+    - uses: actions/checkout@v2
+
+    - name: Setup .NET Framework
+      uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: '4.7.2'
+
     - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: nuget restore YourSolution.sln  # Restauration des dépendances via NuGet
+
+    - name: Run tests
+      run: |
+        nuget install NUnit.ConsoleRunner -Version <version> -OutputDirectory testrunner
+        testrunner\nunit3-console.exe FoxOrm.dll
