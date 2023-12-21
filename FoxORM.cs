@@ -190,9 +190,9 @@ namespace FoxORM
             if (body == null)
                 return;
         
-            if (body.Left is BinaryExpression)
+            if (body.Left is BinaryExpression left)
             {
-                ProcessBinary((BinaryExpression)body.Left, query);
+                ProcessBinary(left, query);
             }
             else
             {
@@ -226,10 +226,9 @@ namespace FoxORM
         /// <param name="query">The StringBuilder object representing the query.</param>
         private void AddCondition(Expression expression, StringBuilder query)
         {
-            var memberExpression = expression as MemberExpression;
             var constantExpression = expression as ConstantExpression;
         
-            if (memberExpression != null)
+            if (expression is MemberExpression memberExpression)
                 query.Append($"{memberExpression.Member.Name} ");
         
             if (constantExpression != null)
