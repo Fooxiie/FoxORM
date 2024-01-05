@@ -125,6 +125,26 @@ namespace FoxORM
         }
         
         /// <summary>
+        /// Queries records of the specified type from the SQLite database based on a predicate.
+        /// </summary>
+        /// <typeparam name="T">The type of records to query.</typeparam>
+        /// <param name="predicate">The predicate to filter records.</param>
+        /// <returns>A list of records of the specified type based on the predicate, or null if an error occurred.</returns>
+        public async Task<List<T>> Query<T>(Expression<Func<T, bool>> predicate) where T : new()
+        {
+            try
+            {
+                var query = this.sqliteConnection.Table<T>().Where(predicate);
+                var items = await query.ToListAsync();
+                return items;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        
+        /// <summary>
         /// Deletes an object from the SQLite database.
         /// </summary>
         /// <typeparam name="T">The type of object being deleted.</typeparam>
