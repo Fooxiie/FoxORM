@@ -57,7 +57,7 @@ namespace FoxORM
 
             try
             {
-                var idProperty = typeof(T).GetProperty("id");
+                var idProperty = typeof(T).GetProperty("Id");
                 if (idProperty == null)
                     throw new Exception(
                         $"The type {typeof(T).Name} does not have a 'id' property, which is expected for entities.");
@@ -86,7 +86,7 @@ namespace FoxORM
         /// Retrieves an item with the specified id from the SQLite database.
         /// </summary>
         /// <typeparam name="T">The type of the item to retrieve.</typeparam>
-        /// <param name="id">The id of the item to retrieve.</param>
+        /// <param name="Id">The id of the item to retrieve.</param>
         /// <returns>
         /// The retrieved item from the database with the specified id, if found; otherwise, the default value of type T.
         /// </returns>
@@ -157,7 +157,7 @@ namespace FoxORM
             if (objectToDelete == null) throw new ArgumentNullException(nameof(objectToDelete));
             try
             {
-                var idProperty = typeof(T).GetProperty("id");
+                var idProperty = typeof(T).GetProperty("Id");
                 if (idProperty == null) throw new Exception($"The type {typeof(T).Name} does not have a 'id' property, which is expected for entities.");
                 var idValue = (int)idProperty.GetValue(objectToDelete);
                 var existingRecord = await this.sqliteConnection.FindAsync<T>(idValue);
@@ -186,7 +186,7 @@ namespace FoxORM
             where T2 : new()
         {
             
-            var idProperty = typeof(T1).GetProperty("id");
+            var idProperty = typeof(T1).GetProperty("Id");
             if (idProperty == null) throw new Exception($"The type {typeof(T1).Name} does not have a 'id' property, which is expected for entities.");
             var idPropertyName = typeof(T1).GetProperty("Id").Name;
 
