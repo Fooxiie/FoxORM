@@ -50,7 +50,7 @@ namespace FoxORM
         /// <param name="objectToSave">The object to be saved.</param>
         /// <returns>True if the object is saved successfully; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown when objectToSave is null.</exception>
-        /// <exception cref="Exception">Thrown when the type T does not have an 'id' property, or an unknown exception occurs during the save operation.</exception>
+        /// <exception cref="Exception">Thrown when the type T does not have an 'Id' property, or an unknown exception occurs during the save operation.</exception>
         public async Task<bool> Save<T>(T objectToSave) where T : new()
         {
             if (objectToSave == null) throw new ArgumentNullException(nameof(objectToSave));
@@ -60,7 +60,7 @@ namespace FoxORM
                 var idProperty = typeof(T).GetProperty("Id");
                 if (idProperty == null)
                     throw new Exception(
-                        $"The type {typeof(T).Name} does not have a 'id' property, which is expected for entities.");
+                        $"The type {typeof(T).Name} does not have a 'Id' property, which is expected for entities.");
 
                 var idValue = (int)idProperty.GetValue(objectToSave);
                 var existingRecord = await this.sqliteConnection.FindAsync<T>(idValue);
@@ -151,14 +151,14 @@ namespace FoxORM
         /// <param name="objectToDelete">The object to be deleted.</param>
         /// <returns>True if the object is deleted successfully; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">Thrown when objectToDelete is null.</exception>
-        /// <exception cref="Exception">Thrown when the type T does not have an 'id' property, or an unknown exception occurs during the delete operation.</exception>
+        /// <exception cref="Exception">Thrown when the type T does not have an 'Id' property, or an unknown exception occurs during the delete operation.</exception>
         public async Task<bool> Delete<T>(T objectToDelete) where T : new()
         {
             if (objectToDelete == null) throw new ArgumentNullException(nameof(objectToDelete));
             try
             {
                 var idProperty = typeof(T).GetProperty("Id");
-                if (idProperty == null) throw new Exception($"The type {typeof(T).Name} does not have a 'id' property, which is expected for entities.");
+                if (idProperty == null) throw new Exception($"The type {typeof(T).Name} does not have a 'Id' property, which is expected for entities.");
                 var idValue = (int)idProperty.GetValue(objectToDelete);
                 var existingRecord = await this.sqliteConnection.FindAsync<T>(idValue);
                 if (existingRecord != null)
@@ -175,24 +175,27 @@ namespace FoxORM
         }
 
         /// <summary>
+        /// Bêta feature
         /// Joins two tables asynchronously based on the given predicate and returns a list of objects of type T1.
         /// </summary>
         /// <typeparam name="T1">The type of objects in the first table.</typeparam>
         /// <typeparam name="T2">The type of objects in the second table.</typeparam>
         /// <param name="predicate">The predicate used to filter the join operation.</param>
-        /// <returns>A Task representing the asynchronous operation. The task result contains a list of objects of type T1.</returns>
-        public async Task<List<T1>> JoinAsync<T1, T2>(Expression<Func<T1, bool>> predicate)
+        /// <param name="foreignKey">The name of the foreignKey properties to match with</param>
+        /// <returns>A Task representing the asynchronous operation. The task result contains a
+        /// list of objects of type T1 with the T2 include, but only if second part exist.</returns>
+        public async Task<List<T1>> JoinAsync<T1, T2>(Expression<Func<T1, bool>> predicate, string foreignKey)
             where T1 : new()
             where T2 : new()
         {
             
             var idProperty = typeof(T1).GetProperty("Id");
-            if (idProperty == null) throw new Exception($"The type {typeof(T1).Name} does not have a 'id' property, which is expected for entities.");
-            var idPropertyName = typeof(T1).GetProperty("Id").Name;
+            if (idProperty == null) throw new Exception($"The type {typeof(T1).Name} does not have a 'Id' property, which is expected for entities.");
+            var idPropertyName = typeof(T1).GetProperty("Id")?.Name;
 
 
-            var query = new StringBuilder($"SELECT t1.* FROM {typeof(T1).Name} t1 JOIN {typeof(T2).Name} t2 ON t1.{idPropertyName} = t2.{idPropertyName}");
-        
+            var query = new StringBuilder($"SELECT t1.* FROM {typeof(T1).Name} t1 JOIN {typeof(T2).Name} t2 ON t1.{idPropertyName} = t2.{foreignKey}");
+
             query.Append(" WHERE ");
             ProcessBinary((BinaryExpression)predicate.Body, query);
         
