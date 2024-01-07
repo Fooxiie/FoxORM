@@ -15,7 +15,7 @@ FoxORM est un ORM spécialement conçu pour les plugins Nova-Life. En effet il v
 - Récupération d'une liste d'object de votre table (FetchAll)
 - Récupération d'une liste d'object avec un prédicat (FetchWhere)
 - Suppression de votre objet en base de données
-- Jointure de table (Bêta) avec prédicat
+- Jointure de table (A venir) avec prédicat
 
 ## Structure des classes
 
@@ -27,20 +27,25 @@ Vous imaginez bien que vos classes vont devoir respecter plusieurs critère afin
 
 Pour l'exemple nous allons prendre la structure de FoxLottery à savoir.
 
-```mermaid
-classDiagram
-      Lottery <|-- Ticket
-      Lottery : +int Id
-      Lottery : +int Montant
-      Lottery : +String EnterpriseName
-      Lottery : +int BizID
-      Lottery : +float Price
-      class Ticket{
-          +int Id
-          +int IdCharacter
-          +int IdLottery
-          +int Number
-      }
+```c#
+public class LotteryModel
+{
+     [AutoIncrement] [PrimaryKey] public int Id { get; set; }
+
+     public int montant { get; set; }
+
+     public string enterpriseName { get; set; }
+
+     public int bizID { get; set; }
+
+     public float price { get; set; }
+
+     public int status { get; set; }
+
+     public int numSortie { get; set; }
+
+     [NonSerialized] public int NombreParticipant;
+}
 ```
 
 Des loteries ou des tickets sont relier dessus. Situation très simple. Nous allons donc voir comment exploiter ça facilement en quelque ligne avec FoxORM.
@@ -72,5 +77,10 @@ bool resultSupression = await _foxOrm.Delete<Lottery>(queriedLottery);
 var allLottery = await _foxOrm.QueryAll<Lottery>();
 
 // Mais si je veux toutes les lottery d'un montant plus que 1000
-
+var queriedLottery = await _foxOrm.Query<Lottery>(lottery => lottery.montant > 1000);
 ```
+> N'oubliez pas de livrer FoxORM.dll avec votre plugin !
+
+# Pour toute question ou bug
+Rejoindre le discord : https://discord.gg/aztFmNxEqp
+
