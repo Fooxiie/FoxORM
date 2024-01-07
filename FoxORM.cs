@@ -174,6 +174,31 @@ namespace FoxORM
                 return false;
             }
         }
+        
+        /// <summary>
+        /// Deletes an object from the SQLite database by ID.
+        /// </summary>
+        /// <param name="id">Id of the object in database</param>
+        /// <typeparam name="T">Class of the concerned object</typeparam>
+        /// <returns>True if the object is deleted successfully; otherwise, false.</returns>
+        public async Task<bool> Delete<T>(int id) where T : new()
+        {
+            try
+            {
+                
+                var existingRecord = await Query<T>(id);
+                if (existingRecord != null)
+                {
+                    await this.Delete(existingRecord);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// Bêta feature
