@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
@@ -184,7 +185,7 @@ namespace FoxORM
         /// <param name="foreignKey">The name of the foreignKey properties to match with</param>
         /// <returns>A Task representing the asynchronous operation. The task result contains a
         /// list of objects of type T1 with the T2 include, but only if second part exist.</returns>
-        public async Task<List<T1>> JoinAsync<T1, T2>(Expression<Func<T1, bool>> predicate, string foreignKey)
+        private async Task<Dictionary<T1, List<T2>>> JoinAsync<T1, T2>(Expression<Func<T1, bool>> predicate, string foreignKey)
             where T1 : new()
             where T2 : new()
         {
@@ -193,69 +194,16 @@ namespace FoxORM
             if (idProperty == null) throw new Exception($"The type {typeof(T1).Name} does not have a 'Id' property, which is expected for entities.");
             var idPropertyName = typeof(T1).GetProperty("Id")?.Name;
 
-
-            var query = new StringBuilder($"SELECT t1.* FROM {typeof(T1).Name} t1 JOIN {typeof(T2).Name} t2 ON t1.{idPropertyName} = t2.{foreignKey}");
-
-            query.Append(" WHERE ");
-            ProcessBinary((BinaryExpression)predicate.Body, query);
-        
-            return await sqliteConnection.QueryAsync<T1>(query.ToString());
-        }
-
-        /// <summary>
-        /// Processes a binary expression by recursively traversing the expression tree
-        /// and builds a query string based on the expression.
-        /// </summary>
-        /// <param name="body">The binary expression to process.</param>
-        /// <param name="query">The StringBuilder representing the query string being built.</param>
-        private void ProcessBinary(BinaryExpression body, StringBuilder query)
-        {
-            if (body == null)
-                return;
-        
-            if (body.Left is BinaryExpression left)
+            Dictionary<T1, List<T2>> finalResult = new Dictionary<T1, List<T2>>();
+            var firstResult =  await Query<T1>(predicate);
+            foreach (var result in firstResult)
             {
-                ProcessBinary(left, query);
-            }
-            else
-            {
-                AddCondition(body.Left, query);
+                int id = (int)idProperty.GetValue(result);
+                var subResult = await Query<T2>(element => (int)element.GetType().GetProperty(foreignKey).GetValue(element) == id);
+                finalResult.Add(result, subResult);
             }
         
-            switch (body.NodeType)
-            {
-                case ExpressionType.AndAlso:
-                    query.Append(" AND ");
-                    break;
-                case ExpressionType.OrElse:
-                    query.Append(" OR ");
-                    break;
-            }
-        
-            if (body.Right is BinaryExpression)
-            {
-                ProcessBinary((BinaryExpression)body.Right, query);
-            }
-            else
-            {
-                AddCondition(body.Right, query);
-            }
-        }
-
-        /// <summary>
-        /// Adds a condition to the query based on the given expression.
-        /// </summary>
-        /// <param name="expression">The expression representing the condition.</param>
-        /// <param name="query">The StringBuilder object representing the query.</param>
-        private void AddCondition(Expression expression, StringBuilder query)
-        {
-            var constantExpression = expression as ConstantExpression;
-        
-            if (expression is MemberExpression memberExpression)
-                query.Append($"{memberExpression.Member.Name} ");
-        
-            if (constantExpression != null)
-                query.Append($"= {constantExpression.Value} ");
+            return finalResult;
         }
 
         /// <summary>
