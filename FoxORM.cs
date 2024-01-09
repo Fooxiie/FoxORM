@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using SQLite;
+using UnityEngine;
 
 namespace FoxORM
 {
@@ -77,8 +78,9 @@ namespace FoxORM
 
                 return true;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogError($"[FOXORM] OnSave : {exception.Message}");
                 return false;
             }
         }
@@ -101,8 +103,9 @@ namespace FoxORM
                 var item = await this.sqliteConnection.FindAsync<T>(id);
                 return item;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogError($"[FOXORM] OnQuery(int) : {exception.Message}");
                 return default;
             }
         }
@@ -119,8 +122,9 @@ namespace FoxORM
                 var items = await this.sqliteConnection.Table<T>().ToListAsync();
                 return items;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogError($"[FOXORM] QueryAll : {exception.Message}");
                 return null;
             }
         }
@@ -139,8 +143,9 @@ namespace FoxORM
                 var items = await query.ToListAsync();
                 return items;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogError($"[FOXORM] Query(predicate) : {exception.Message}");
                 return null;
             }
         }
@@ -169,8 +174,9 @@ namespace FoxORM
                 }
                 return false;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogError($"[FOXORM] OnDelete(T) : {exception.Message}");
                 return false;
             }
         }
@@ -194,8 +200,9 @@ namespace FoxORM
                 }
                 return false;
             }
-            catch (Exception)
+            catch (Exception exception)
             {
+                Debug.LogError($"[FOXORM] OnDelete(int) : {exception.Message}");
                 return false;
             }
         }
